@@ -14,17 +14,20 @@ def unzip_model(zip_path, extract_path, model_filename):
             zip_ref.extract(model_filename, extract_path)
         print(f"Extracted {model_filename} from {zip_path}")
 
+# فك ضغط ملفات النماذج والانكودر فقط إذا لم تكن موجودة
 unzip_model("model.zip", ".", "model.pkl")
 unzip_model("encoder.zip", ".", "encoder.pkl")
 unzip_model("modeld.zip", ".", "modeld.pkl")
 unzip_model("Duencoder.zip", ".", "Duencoder.pkl")
 
+# تحميل النماذج والانكودر بعد فك الضغط
 strategy_model = joblib.load("model.pkl")
 strategy_encoders = joblib.load("encoder.pkl")
 
 duration_model = joblib.load("modeld.pkl")
 duration_encoders = joblib.load("Duencoder.pkl")
 
+# تحميل نموذج و انكودر النموذج الثالث
 model3 = joblib.load("model3.pkl")
 encoder3 = joblib.load("encoder3.pkl")
 
@@ -107,34 +110,38 @@ def predict_duration():
 def predict():
     try:
         data = request.json
-        print("Received data:", data)
+        print("📦 Received data:", data)
 
-        platform = data['platform']                   
-        duration_weeks = float(data['duration'])      
-        budget = float(data['budget'])               
-        ad_type = data['ad_type']                     
-        previous_ctr = float(data['previous_ctr'])    
-        previous_conversion_rate = float(data['conversion_rate'])  
+        # جلب القيم من الطلب
+        platform = data['platform']                   # نص
+        duration_weeks = float(data['duration'])      # رقم
+        budget = float(data['budget'])                # رقم
+        ad_type = data['ad_type']                     # نص
+        previous_ctr = float(data['previous_ctr'])    # رقم
+        previous_conversion_rate = float(data['conversion_rate'])  # رقم
 
+        # التحقق من صحة القيم النصية
         if platform not in encoder3['platform'].classes_:
             return jsonify({'error': f'Invalid platform: {platform}'}), 400
         if ad_type not in encoder3['ad_type'].classes_:
             return jsonify({'error': f'Invalid ad_type: {ad_type}'}), 400
 
+        # الترميز
         encoded_platform = encoder3['platform'].transform([platform])[0]
         encoded_ad_type = encoder3['ad_type'].transform([ad_type])[0]
 
+        # ترتيب المدخلات تمامًا كما دربت النموذج
         input_data = np.array([[encoded_platform, duration_weeks, budget, encoded_ad_type, previous_ctr, previous_conversion_rate]])
 
         prediction = model3.predict(input_data)[0]
 
         return jsonify({
             'prediction': int(prediction),
-            'result': 'Successful' if prediction == 1 else 'Failed'
+            'result': 'Successful 🎯' if prediction == 1 else 'Failed 💔'
         })
 
     except Exception as e:
-        print("Error:", e)
+        print("❌ Error:", e)
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
