@@ -144,6 +144,11 @@ def predict():
         print("❌ Error:", e)
         return jsonify({'error': str(e)}), 500
 
+# إضافة نقطة النهاية الجديدة للتحقق من صحة الخادم
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "Server is running smoothly 🚀"}), 200
+
 if __name__ == '__main__':
     import os
     port = int(os.environ.get("PORT", 5000))
